@@ -18,7 +18,7 @@ public class RobotHardware {
     public final Telemetry telemetry;
 
 
-    public final DcMotor RT, RB, LT, LB, diffy;
+    public final DcMotor RT, RB, LT, LB, diffy, turret, flywheel, intake;
 
     public final IMU imu; // gyroscope that keeps track of heading
 
@@ -35,8 +35,8 @@ public class RobotHardware {
     // This is everything you would ever need to know in order to use a HuskyLens: https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336
 
 
-    public PIDController FieldCentricPoint;
-    public final DoubleSupplier heading;
+    public PIDController TurretPID;
+    public final DoubleSupplier heading, turretPosition;
 
 
     public RobotHardware(HardwareMap hardwareMap, Telemetry telemetry) {
@@ -60,12 +60,15 @@ public class RobotHardware {
         LT = hardwareMap.get(DcMotor.class, "LT");
         LB = hardwareMap.get(DcMotor.class, "LB");
         diffy = hardwareMap.get(DcMotor.class, "diffy");
-        //Arm = hardwareMap.get(DcMotorEx.class, "Arm");
+        turret = hardwareMap.get(DcMotor.class, "turret");
+        flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+        intake = hardwareMap.get(DcMotor.class, "intake");
         //Claw = hardwareMap.get(Servo.class, "Claw");
 
 
+        turretPosition = () -> turret.getCurrentPosition(); // divide by encoder ticks per rotation and multiply by 360 degrees
+        TurretPID = new PIDController(0, 0, 0, turretPosition);
 
-        FieldCentricPoint = new PIDController(0, 0, 0, heading);
 
 
         // RF.setDirection(DcMotor.Direction.REVERSE); // This is one way of reversing the direction of motor if needed
@@ -75,17 +78,16 @@ public class RobotHardware {
 
         // This offers a description of what some of the run modes and zeroPowerBehavior do if you click on some of the methods
         // https://ftctechnh.github.io/ftc_app/doc/javadoc/com/qualcomm/robotcore/hardware/DcMotor.html
-        LT.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // This resets the encoder at the start of the code
-        LB.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        RT.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        RB.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
-        diffy.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        //turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // This resets the encoder at the start of the code
 
         LT.setDirection(DcMotorSimple.Direction.FORWARD);
         LB.setDirection(DcMotorSimple.Direction.FORWARD);
         RT.setDirection(DcMotorSimple.Direction.FORWARD);
         RB.setDirection(DcMotorSimple.Direction.FORWARD);
         diffy.setDirection(DcMotorSimple.Direction.FORWARD);
+        turret.setDirection(DcMotorSimple.Direction.FORWARD);
+        flywheel.setDirection(DcMotorSimple.Direction.FORWARD);
+        intake.setDirection(DcMotorSimple.Direction.FORWARD);
 
         //Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -95,17 +97,22 @@ public class RobotHardware {
         RT.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RB.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         diffy.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        flywheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         //Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
 
-        LT.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        LT.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // applying brake is helpful for drive motors and motors using pids
         LB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RT.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         diffy.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // flywheel set to brake so it can recharge the battery as it slows down
 
-        //Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+        intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
 
         // You don't need to use this specific PID as the DcMotor and DcMotorEx have their own form of
@@ -135,6 +142,10 @@ public class RobotHardware {
 
     public double getHeading() {
         return heading.getAsDouble();
+    }
+
+    public double getTurretPosition() {
+        return turretPosition.getAsDouble();
     }
 
 
