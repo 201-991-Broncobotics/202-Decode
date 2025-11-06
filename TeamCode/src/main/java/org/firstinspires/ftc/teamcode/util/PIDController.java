@@ -21,7 +21,7 @@ import java.util.function.DoubleSupplier;
  */
 public class PIDController {
 
-    public double kP, kI, kD, kP2;
+    public double kP, kI, kD;
     public double minDifference, minPosition, maxPosition, minPower, maxPower, initialPower, maxSpeed, tolerance, maxIntegral, maxAcceleration, maxDeceleration; // all of these variables can be changed elsewhere in the code
     private boolean positionLimitingEnabled = false, speedLimitingEnabled = false, speedLimitingOverride = false, doVariableCorrection = true;
 
@@ -41,8 +41,6 @@ public class PIDController {
         this.kI = kI;
         this.kD = kD;
         this.encoderPosition = encoderPosition;
-
-        kP2 = 0; // Basically P but squared which allows for moving faster when further away from the target
 
         // DEFAULT VALUES:
         minPosition = 0; // doesn't matter what this is if position limiting is false, same units as the doubleSupplier
@@ -112,12 +110,6 @@ public class PIDController {
 
     public PIDController setTolerance(double newTolerance) {
         this.tolerance = newTolerance;
-        return this;
-    }
-
-
-    public PIDController setP2(double kP2) {
-        this.kP2 = kP2;
         return this;
     }
 
@@ -218,7 +210,7 @@ public class PIDController {
         if (Math.abs(integral) > maxIntegral * (maxPower / kI)) integral = Math.signum(integral) * (maxIntegral * (maxPower / kI)); // stabilize integral
         double Derivative = (Error - lastError) / timeSince;
         lastError = Error;
-        power = (Error * kP) + (Error * Math.abs(Error) * kP2) + (integral * kI) + (Derivative * kD); // calculate the result
+        power = (Error * kP) + (integral * kI) + (Derivative * kD); // calculate the result
 
         power = (Math.abs(power) * (1 - initialPower) + initialPower) * Math.signum(power); // normalizes to start at initial power
 
@@ -246,7 +238,6 @@ public class PIDController {
         if (kP < 0) kP = 0;
         if (kI < 0) kI = 0;
         if (kD < 0) kD = 0;
-        if (kP2 < 0) kP2 = 0;
         if (minPosition > maxPosition) minPosition = maxPosition;
         if (minPower < 0) minPower = 0;
         if (maxPower > 1) maxPower = 1;
@@ -296,7 +287,6 @@ public class PIDController {
         kP = referencePID.kP;
         kI = referencePID.kI;
         kD = referencePID.kD;
-        kP2 = referencePID.kP2;
         minPosition = referencePID.minPosition;
         maxPosition = referencePID.maxPosition;
         minPower = referencePID.minPower;
@@ -316,7 +306,6 @@ public class PIDController {
         kP = referenceSettings.kP;
         kI = referenceSettings.kI;
         kD = referenceSettings.kD;
-        kP2 = referenceSettings.kP2;
         minPosition = referenceSettings.minPosition;
         maxPosition = referenceSettings.maxPosition;
         minPower = referenceSettings.minPower;
@@ -347,4 +336,54 @@ public class PIDController {
         stoppedUntilNextUse = true;
     }
 
+
+    public class PIDControllerSettingsReference {
+
+        public double kP, kI, kD, minPosition, maxPosition, minPower, maxPower, initialPower, minDifference, maxSpeed, tolerance, maxAcceleration, maxDeceleration;
+
+        public boolean positionLimitingEnabled, speedLimitingEnabled;
+
+        /**
+         * All positions and speeds are in the same units as the doubleSupplier of the encoder values and speed/acceleration is based on seconds
+         *
+         * @param aP P value (the "a" makes it appear at the top in ftcdashboard)
+         * @param aI I value
+         * @param aD D value
+         * @param minPosition lower position limit (if positionLimitingEnabled)
+         * @param maxPosition upper position limit (if positionLimitingEnabled)
+         * @param minPower
+         * @param maxPower
+         * @param initialPower power needed to start turning the motor / make sure to set minPower if using
+         * @param minDifference stops PID when the error is less than this
+         * @param maxSpeed (if speedLimitingEnabled)
+         * @param tolerance +-this is the range where closeEnough() will return true
+         * @param maxAcceleration (if speedLimitingEnabled)
+         * @param maxDeceleration (if speedLimitingEnabled)
+         * @param positionLimitingEnabled
+         * @param speedLimitingEnabled
+         */
+        public PIDControllerSettingsReference(double aP, double aI, double aD, double minPosition, double maxPosition, double minPower, double maxPower, double initialPower, double minDifference, double maxSpeed, double tolerance, double maxAcceleration, double maxDeceleration, boolean positionLimitingEnabled, boolean speedLimitingEnabled) {
+            kP = aP;
+            kI = aI;
+            kD = aD;
+            this.minPosition = minPosition;
+            this.maxPosition = maxPosition;
+            this.minPower = minPower;
+            this.maxPower = maxPower;
+            this.initialPower = initialPower;
+            this.minDifference = minDifference;
+            this.maxSpeed = maxSpeed;
+            this.tolerance = tolerance;
+            // this.maxIntegral = maxIntegral;
+            this.maxAcceleration = maxAcceleration;
+            this.maxDeceleration = maxDeceleration;
+            this.positionLimitingEnabled = positionLimitingEnabled;
+            this.speedLimitingEnabled = speedLimitingEnabled;
+        }
+
+    }
+
 }
+
+
+

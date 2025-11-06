@@ -20,7 +20,7 @@ public class RobotHardware {
 
     public final DcMotor RT, RB, LT, LB, diffy;
 
-    public final IMU imu;
+    public final IMU imu; // gyroscope that keeps track of heading
 
     /*
     DcMotor is the basic motor class for using a motor though there is also DcMotorEx which allows
@@ -132,13 +132,6 @@ public class RobotHardware {
         diffy.setPower(throttle * forward / max_power);
     }
 
-
-    public void driveFieldCentric(double forward, double strafe, double turn, double throttle) {
-        double angle = 0;
-        double magnitude = Math.hypot(forward, strafe) * throttle;
-
-
-    }
 
     public double getHeading() {
         return heading.getAsDouble();
