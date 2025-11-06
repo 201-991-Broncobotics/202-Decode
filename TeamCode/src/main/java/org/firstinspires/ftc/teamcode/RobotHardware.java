@@ -18,7 +18,7 @@ public class RobotHardware {
     public final Telemetry telemetry;
 
 
-    public final DcMotor RT, RB, LT, LB;
+    public final DcMotor RT, RB, LT, LB, diffy;
 
     public final IMU imu;
 
@@ -59,6 +59,7 @@ public class RobotHardware {
         RB = hardwareMap.get(DcMotor.class, "RB");
         LT = hardwareMap.get(DcMotor.class, "LT");
         LB = hardwareMap.get(DcMotor.class, "LB");
+        diffy = hardwareMap.get(DcMotor.class, "diffy");
         //Arm = hardwareMap.get(DcMotorEx.class, "Arm");
         //Claw = hardwareMap.get(Servo.class, "Claw");
 
@@ -78,11 +79,13 @@ public class RobotHardware {
         LB.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RT.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
         RB.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
+        diffy.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
         LT.setDirection(DcMotorSimple.Direction.FORWARD);
         LB.setDirection(DcMotorSimple.Direction.FORWARD);
         RT.setDirection(DcMotorSimple.Direction.FORWARD);
         RB.setDirection(DcMotorSimple.Direction.FORWARD);
+        diffy.setDirection(DcMotorSimple.Direction.FORWARD);
 
         //Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -91,6 +94,7 @@ public class RobotHardware {
         LB.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RT.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         RB.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
+        diffy.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
         //Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
 
@@ -99,6 +103,7 @@ public class RobotHardware {
         LB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RT.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         RB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
+        diffy.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         //Arm.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
@@ -124,6 +129,7 @@ public class RobotHardware {
         LB.setPower(throttle * -(-forward - turn) / max_power);
         RT.setPower(throttle * (forward - turn) / max_power);
         RB.setPower(throttle * -(forward - turn) / max_power);
+        diffy.setPower(throttle * forward / max_power);
     }
 
 
