@@ -2,8 +2,11 @@ package org.firstinspires.ftc.teamcode;
 
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
+
 
 @TeleOp(name="TeleOp", group="Iterative Opmode")
 public class BasicTeleOp extends LinearOpMode {
@@ -13,11 +16,15 @@ public class BasicTeleOp extends LinearOpMode {
 
         Gamepad driver = gamepad1, operator = gamepad2; // initialize controllers
 
-        ElapsedTime mRuntime = new ElapsedTime(ElapsedTime.Resolution.MILLISECONDS);
+        ElapsedTime mRuntime = new ElapsedTime(ElapsedTime.Resolution.SECONDS);
 
         // You can create any variables you need here
         double FrameTime = 0;
-        double lastFlywheelPosition = 0;
+        double flywheelVelocity = 0;
+        ElapsedTime liftServoTimer = new ElapsedTime(ElapsedTime.Resolution.SECONDS);
+        boolean justStarted = true;
+        double FlywheelTargetVel = 0;
+        double flywheelPower = 0;
 
 
 
@@ -28,7 +35,7 @@ public class BasicTeleOp extends LinearOpMode {
             // DRIVETRAIN
             // Call the Mecanum drive method from RobotHardware to drive the robot
             // If you want to use absolute driving, you might want to make use of Roadrunner's localizer (check BasicAuton)
-            robot.driveWithControllers(driver.left_stick_y, -1 * driver.left_stick_x, 1 - 0.6 * driver.left_trigger);
+            robot.driveWithControllers(driver.left_stick_y + Settings.secretForward, -0.7 * driver.left_stick_x + Settings.secretTurn, 1); // 1 - 0.6 * driver.left_trigger
 
 
 
@@ -45,18 +52,41 @@ public class BasicTeleOp extends LinearOpMode {
             // robot.Arm.setTargetPosition(0);
 
             // TURRET
-            robot.turret.setPower(operator.left_stick_x * 0.25);
+            robot.turret.setPower((driver.dpad_left ? 0.6 : 0.0) + (driver.dpad_right ? -0.6 : 0.0));
 
             // FLYWHEEL
-            if (operator.left_trigger > 0.1) robot.flywheel.setPower(operator.left_trigger);
-            else robot.flywheel.setPower(0);
+            if (driver.left_trigger > 0.1 || Settings.justTurnFlywheelOn) {
+                // Updates PID settings while the robot is on
+                robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0)); // F is just a constant, like for gravity which isn't needed here
+
+                FlywheelTargetVel = driver.left_trigger * Settings.flywheelVel;
+
+                if (Settings.justTurnFlywheelOn) robot.flywheel.setVelocity(FlywheelTargetVel/60.0 * 28); // in encoder tick per second
+                else robot.flywheel.setPower(0.7); // for when not testing PID
+            }
+            else {
+                robot.flywheel.setPower(0);
+            }
 
             // INTAKE
-            if (operator.right_trigger > 0.1) {
-                robot.intake.setPower(operator.right_trigger);
-            } else if (operator.right_bumper) {
-                robot.intake.setPower(-0.4);
-            } else robot.intake.setPower(0);
+            if (driver.right_trigger > 0.1) {
+                robot.intake.setPower(0.8);
+            } else if (driver.right_bumper) {
+                robot.intake.setPower(-0.8);
+            } else robot.intake.setPower(0 + Settings.secretIntake); // secret stuff just gives me the ability to drive the robot from my computer
+
+            // LIFT SERVO
+            if (driver.b) {
+                liftServoTimer.reset();
+                justStarted = false; // waits until you hit the button first before it resets the timer, just cause the timer gets restarted with the robot being enabled
+            }
+            if (liftServoTimer.time() < 0.8 && !justStarted) {
+                robot.lift.setPower(-0.25);
+                // robot.lift.setPosition(Settings.ServoTopPosition);
+            } else if (liftServoTimer.time() < 1.8 && !justStarted) {
+                robot.lift.setPower(0.25);
+                // robot.lift.setPosition(Settings.ServoBottomPosition);
+            } else robot.lift.setPower(0);
 
 
             // This is an example of how to use a servo as a claw
@@ -66,14 +96,16 @@ public class BasicTeleOp extends LinearOpMode {
 
 
             // TELEMETRY
-            FrameTime = mRuntime.time() / 1000.0;
+            FrameTime = mRuntime.time(); // time it takes for the entire code to run once
             mRuntime.reset();
-            telemetry.addData("FPS:", 1.0 / FrameTime); // This will find how many times this loop runs per second, also called Hz
-            telemetry.addData("Heading", Math.toDegrees(robot.getHeading()));
-            telemetry.addData("Turret Position", robot.getTurretPosition());
-            telemetry.addData("Flywheel Power", robot.flywheel.getPower());
-            telemetry.addData("Flywheel Speed (rpm)", ((robot.flywheel.getCurrentPosition() - lastFlywheelPosition) / 28.0) * FrameTime * 60); // 28 is encoder ticks per revolution
-            lastFlywheelPosition = robot.flywheel.getCurrentPosition();
+            telemetry.addData("FPS:", 1.0 / FrameTime); // This will find how many times this loop runs per second, also called Hertz
+            telemetry.addData("Turret Position", robot.turret.getCurrentPosition());
+            // telemetry.addData("Lift Position", robot.lift.getPosition());
+            telemetry.addData("Flywheel Target Speed (rpm)", FlywheelTargetVel);
+            telemetry.addData("Flywheel Speed (rpm)", flywheelVelocity);
+            telemetry.addData("Flywheel encoder", robot.flywheel.getCurrentPosition());
+            telemetry.addData("Flywheel power", flywheelPower);
+
 
             // Telemetry
             telemetry.addLine(""); // blank line

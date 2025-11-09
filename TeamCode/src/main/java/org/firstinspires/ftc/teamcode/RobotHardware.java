@@ -1,15 +1,12 @@
 package org.firstinspires.ftc.teamcode;
 
-import com.qualcomm.hardware.rev.RevHubOrientationOnRobot;
+import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
-import com.qualcomm.robotcore.hardware.DcMotorSimple;
+import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.HardwareMap;
-import com.qualcomm.robotcore.hardware.IMU;
+import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
-import org.firstinspires.ftc.teamcode.util.PIDController;
-
-import java.util.function.DoubleSupplier;
 
 
 public class RobotHardware {
@@ -18,9 +15,8 @@ public class RobotHardware {
     public final Telemetry telemetry;
 
 
-    public final DcMotor RT, RB, LT, LB, diffy, turret, flywheel, intake;
-
-    public final IMU imu; // gyroscope that keeps track of heading
+    public final DcMotor RT, RB, LT, LB, diffy, turret, intake;
+    public final DcMotorEx flywheel;
 
     /*
     DcMotor is the basic motor class for using a motor though there is also DcMotorEx which allows
@@ -28,32 +24,13 @@ public class RobotHardware {
      */
 
 
-    //public final DcMotorEx Arm;
-
-    //public final Servo Claw; // If you need to use a servo similar to a motor, use CRServo
+    public final CRServo lift; // If you need to use a servo similar to a motor, use CRServo
 
     // This is everything you would ever need to know in order to use a HuskyLens: https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336
 
 
-    public PIDController TurretPID;
-    public final DoubleSupplier heading, turretPosition;
-
-
     public RobotHardware(HardwareMap hardwareMap, Telemetry telemetry) {
         this.telemetry = telemetry;
-
-        imu = hardwareMap.get(IMU.class, "imu");
-
-        RevHubOrientationOnRobot orientationOnRobot;
-        orientationOnRobot = new RevHubOrientationOnRobot(
-                RevHubOrientationOnRobot.LogoFacingDirection.LEFT,
-                RevHubOrientationOnRobot.UsbFacingDirection.UP
-        );
-        imu.initialize(new IMU.Parameters(orientationOnRobot));
-
-        heading = () -> imu.getRobotYawPitchRollAngles().getYaw();
-
-
 
         RT = hardwareMap.get(DcMotor.class, "RT");
         RB = hardwareMap.get(DcMotor.class, "RB");
@@ -61,33 +38,24 @@ public class RobotHardware {
         LB = hardwareMap.get(DcMotor.class, "LB");
         diffy = hardwareMap.get(DcMotor.class, "diffy");
         turret = hardwareMap.get(DcMotor.class, "turret");
-        flywheel = hardwareMap.get(DcMotor.class, "flywheel");
+        flywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
         intake = hardwareMap.get(DcMotor.class, "intake");
-        //Claw = hardwareMap.get(Servo.class, "Claw");
-
-
-        turretPosition = () -> turret.getCurrentPosition(); // divide by encoder ticks per rotation and multiply by 360 degrees
-        TurretPID = new PIDController(0, 0, 0, turretPosition);
-
-
-
-        // RF.setDirection(DcMotor.Direction.REVERSE); // This is one way of reversing the direction of motor if needed
-
-        //Claw.setDirection(Servo.Direction.FORWARD);
+        lift = hardwareMap.get(CRServo.class, "lift");
 
 
         // This offers a description of what some of the run modes and zeroPowerBehavior do if you click on some of the methods
         // https://ftctechnh.github.io/ftc_app/doc/javadoc/com/qualcomm/robotcore/hardware/DcMotor.html
-        //turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER); // This resets the encoder at the start of the code
+        //turret.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
-        LT.setDirection(DcMotorSimple.Direction.FORWARD);
-        LB.setDirection(DcMotorSimple.Direction.FORWARD);
-        RT.setDirection(DcMotorSimple.Direction.FORWARD);
-        RB.setDirection(DcMotorSimple.Direction.FORWARD);
-        diffy.setDirection(DcMotorSimple.Direction.FORWARD);
-        turret.setDirection(DcMotorSimple.Direction.FORWARD);
-        flywheel.setDirection(DcMotorSimple.Direction.FORWARD);
-        intake.setDirection(DcMotorSimple.Direction.FORWARD);
+
+        LT.setDirection(DcMotor.Direction.FORWARD);
+        LB.setDirection(DcMotor.Direction.FORWARD);
+        RT.setDirection(DcMotor.Direction.FORWARD);
+        RB.setDirection(DcMotor.Direction.FORWARD);
+        diffy.setDirection(DcMotor.Direction.FORWARD);
+        turret.setDirection(DcMotor.Direction.FORWARD);
+        intake.setDirection(DcMotor.Direction.FORWARD);
+        flywheel.setDirection(DcMotorEx.Direction.FORWARD);
 
         //Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -98,10 +66,11 @@ public class RobotHardware {
         RB.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         diffy.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
-        flywheel.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         intake.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
 
-        //Arm.setMode(DcMotor.RunMode.RUN_USING_ENCODER);
+        flywheel.setMode(DcMotorEx.RunMode.STOP_AND_RESET_ENCODER); // This resets the encoder
+        flywheel.setMode(DcMotorEx.RunMode.RUN_USING_ENCODER); // This activates the motor to use the PID
+
 
 
         LT.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // applying brake is helpful for drive motors and motors using pids
@@ -110,17 +79,13 @@ public class RobotHardware {
         RB.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         diffy.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
-        flywheel.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE); // flywheel set to brake so it can recharge the battery as it slows down
+        flywheel.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE); // flywheel set to brake so it can recharge the battery as it slows down
 
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
 
 
         // You don't need to use this specific PID as the DcMotor and DcMotorEx have their own form of
         // a PID which you can use by setting the runMode to RUN_TO_POSITION
-
-        // This sets up the Arm PID (instructions for how to tune this I put in the PIDController class)
-        //ArmPID = new PIDController(0.0, 0.0, 0.0, Arm::getCurrentPosition);
-
 
 
         telemetry.addLine("Robot Hardware Initialized");
@@ -140,15 +105,6 @@ public class RobotHardware {
     }
 
 
-    public double getHeading() {
-        return heading.getAsDouble();
-    }
-
-    public double getTurretPosition() {
-        return turretPosition.getAsDouble();
-    }
-
-
-    // This is where you can add your own methods
+    // This is a place where you can add your own methods
 
 }
