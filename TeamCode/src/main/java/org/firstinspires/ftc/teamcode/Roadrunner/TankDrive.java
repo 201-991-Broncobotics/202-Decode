@@ -111,6 +111,7 @@ public final class TankDrive {
             new ProfileAccelConstraint(PARAMS.minProfileAccel, PARAMS.maxProfileAccel);
 
     public final List<DcMotorEx> leftMotors, rightMotors;
+    public final DcMotorEx diffyMotor;
 
     public final LazyImu lazyImu;
 
@@ -235,8 +236,15 @@ public final class TankDrive {
         // TODO: make sure your config has motors with these names (or change them)
         //   add additional motors on each side if you have them
         //   see https://ftc-docs.firstinspires.org/en/latest/hardware_and_software_configuration/configuring/index.html
-        leftMotors = Arrays.asList(hardwareMap.get(DcMotorEx.class, "left"));
-        rightMotors = Arrays.asList(hardwareMap.get(DcMotorEx.class, "right"));
+        //leftMotors = Arrays.asList(hardwareMap.get(DcMotorEx.class, "left"));
+        //rightMotors = Arrays.asList(hardwareMap.get(DcMotorEx.class, "right"));
+        leftMotors = new ArrayList<DcMotorEx>();
+        rightMotors = new ArrayList<DcMotorEx>();
+        leftMotors.add(hardwareMap.get(DcMotorEx.class, "LT"));
+        leftMotors.add(hardwareMap.get(DcMotorEx.class, "LB"));
+        rightMotors.add(hardwareMap.get(DcMotorEx.class, "RT"));
+        rightMotors.add(hardwareMap.get(DcMotorEx.class, "RB"));
+        diffyMotor = hardwareMap.get(DcMotorEx.class, "diffy");
 
         for (DcMotorEx m : leftMotors) {
             m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
@@ -244,6 +252,7 @@ public final class TankDrive {
         for (DcMotorEx m : rightMotors) {
             m.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         }
+        diffyMotor.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
 
         // TODO: reverse motor directions if needed
         //   leftMotors.get(0).setDirection(DcMotorSimple.Direction.REVERSE);
@@ -275,6 +284,7 @@ public final class TankDrive {
         for (DcMotorEx m : rightMotors) {
             m.setPower(wheelVels.right.get(0) / maxPowerMag);
         }
+        diffyMotor.setPower((wheelVels.right.get(0) + wheelVels.left.get(0)) / 2 / maxPowerMag);
     }
 
     public final class FollowTrajectoryAction implements Action {
@@ -315,6 +325,7 @@ public final class TankDrive {
                 for (DcMotorEx m : rightMotors) {
                     m.setPower(0);
                 }
+                diffyMotor.setPower(0);
 
                 return false;
             }
@@ -344,6 +355,7 @@ public final class TankDrive {
             for (DcMotorEx m : rightMotors) {
                 m.setPower(rightPower);
             }
+            diffyMotor.setPower((rightPower + leftPower)/2);
 
             p.put("x", localizer.getPose().position.x);
             p.put("y", localizer.getPose().position.y);
@@ -405,6 +417,7 @@ public final class TankDrive {
                 for (DcMotorEx m : rightMotors) {
                     m.setPower(0);
                 }
+                diffyMotor.setPower(0);
 
                 return false;
             }
@@ -437,6 +450,7 @@ public final class TankDrive {
             for (DcMotorEx m : rightMotors) {
                 m.setPower(rightPower);
             }
+            diffyMotor.setPower((rightPower + leftPower) / 2);
 
             Canvas c = p.fieldOverlay();
             drawPoseHistory(c);
