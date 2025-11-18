@@ -25,6 +25,9 @@ public class BasicTeleOp extends LinearOpMode {
         boolean justStarted = true;
         double FlywheelTargetVel = 0;
         double flywheelPower = 0;
+        boolean FlywheelOn = false, FlywheelJustToggled = false;
+        double IntakePower = 0;
+        boolean IntakeOn = false, IntakeJustToggled = false;
 
 
 
@@ -55,32 +58,47 @@ public class BasicTeleOp extends LinearOpMode {
             robot.turret.setPower((driver.dpad_left ? 0.6 : 0.0) + (driver.dpad_right ? -0.6 : 0.0));
 
             // FLYWHEEL
-            if (driver.left_trigger > 0.1 || Settings.justTurnFlywheelOn) {
-                // Updates PID settings while the robot is on
-                robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0)); // F is just a constant, like for gravity which isn't needed here
-
+            if (driver.left_trigger > 0.1) {
                 FlywheelTargetVel = driver.left_trigger * Settings.flywheelVel;
-                //ANGLE LOCK
+            } else if (driver.left_bumper) {
+                FlywheelTargetVel = Settings.flywheelVelBumper;
+            }
+
+            if (FlywheelOn) {
+
+                robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0)); // F is just a constant, like for gravity which isn't needed here
+                robot.flywheel.setVelocity(FlywheelTargetVel/60.0 * 28); // in encoder tick per second
+                // robot.flywheel.setPower(0.7); // in case the velocity thing doesn't work
+
+                //Set flap angle
                 robot.angle.setPosition(Settings.servoAngle);
 
-                if (Settings.justTurnFlywheelOn) robot.flywheel.setVelocity(FlywheelTargetVel/60.0 * 28); // in encoder tick per second
-                else robot.flywheel.setPower(0.7); // for when not testing PID
-            }
-            else {
-                robot.flywheel.setPower(0);
-            }
+            } else robot.flywheel.setPower(0);
 
-            if (driver.left_bumper){
-                robot.flywheel.setVelocity(-(FlywheelTargetVel/240 * 28));
-            }
+            if (driver.left_trigger > 0.1 || driver.left_bumper) {
+                if (!FlywheelJustToggled) {
+                    FlywheelOn = !FlywheelOn;
+                    FlywheelJustToggled = true;
+                }
+            } else FlywheelJustToggled = false;
 
 
             // INTAKE
             if (driver.right_trigger > 0.1) {
-                robot.intake.setPower(1);
+                IntakePower = 1;
             } else if (driver.right_bumper) {
-                robot.intake.setPower(-1);
-            } else robot.intake.setPower(0 + Settings.secretIntake); // secret stuff just gives me the ability to drive the robot from my computer
+                IntakePower = -1;
+            }
+
+            if (IntakeOn) robot.intake.setPower(IntakePower);
+            else IntakePower = 0 + Settings.secretIntake; // secret stuff just gives me the ability to drive the robot from my computer
+
+            if (driver.right_trigger > 0.1 || driver.right_bumper) {
+                if (!IntakeJustToggled) {
+                    IntakeOn = !IntakeOn;
+                    IntakeJustToggled = true;
+                }
+            } else IntakeJustToggled = false;
 
             // LIFT SERVO
             if (driver.b) {
@@ -94,7 +112,7 @@ public class BasicTeleOp extends LinearOpMode {
                 // robot.lift.setPosition(Settings.ServoTopPosition);
             } else if (liftServoTimer.time() < 1.8 && !justStarted) {
                 robot.lift.setPower(0.25);
-                robot.lift.setPower(0);
+                robot.intake.setPower(0);
                 // robot.lift.setPosition(Settings.ServoBottomPosition);
             } else robot.lift.setPower(0);
 
