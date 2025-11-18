@@ -3,10 +3,13 @@ package org.firstinspires.ftc.teamcode;
 import com.qualcomm.robotcore.hardware.CRServo;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
+
+import javax.tools.ForwardingFileObject;
 
 
 public class RobotHardware {
@@ -25,6 +28,7 @@ public class RobotHardware {
 
 
     public final CRServo lift; // If you need to use a servo similar to a motor, use CRServo
+    public final Servo angle;
 
     // This is everything you would ever need to know in order to use a HuskyLens: https://wiki.dfrobot.com/HUSKYLENS_V1.0_SKU_SEN0305_SEN0336
 
@@ -41,6 +45,7 @@ public class RobotHardware {
         flywheel = hardwareMap.get(DcMotorEx.class, "flywheel");
         intake = hardwareMap.get(DcMotor.class, "intake");
         lift = hardwareMap.get(CRServo.class, "lift");
+        angle = hardwareMap.get(Servo.class, "angle");
 
 
         // This offers a description of what some of the run modes and zeroPowerBehavior do if you click on some of the methods
@@ -56,6 +61,7 @@ public class RobotHardware {
         turret.setDirection(DcMotor.Direction.FORWARD);
         intake.setDirection(DcMotor.Direction.FORWARD);
         flywheel.setDirection(DcMotorEx.Direction.FORWARD);
+        angle.setDirection(Servo.Direction.FORWARD);
 
         //Arm.setMode(DcMotor.RunMode.STOP_AND_RESET_ENCODER);
 
@@ -82,6 +88,8 @@ public class RobotHardware {
         flywheel.setZeroPowerBehavior(DcMotorEx.ZeroPowerBehavior.BRAKE); // flywheel set to brake so it can recharge the battery as it slows down
 
         intake.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.FLOAT);
+
+        angle.scaleRange(0, 1);
 
 
         // You don't need to use this specific PID as the DcMotor and DcMotorEx have their own form of

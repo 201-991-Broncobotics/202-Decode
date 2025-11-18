@@ -60,6 +60,8 @@ public class BasicTeleOp extends LinearOpMode {
                 robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0)); // F is just a constant, like for gravity which isn't needed here
 
                 FlywheelTargetVel = driver.left_trigger * Settings.flywheelVel;
+                //ANGLE LOCK
+                robot.angle.setPosition(Settings.servoAngle);
 
                 if (Settings.justTurnFlywheelOn) robot.flywheel.setVelocity(FlywheelTargetVel/60.0 * 28); // in encoder tick per second
                 else robot.flywheel.setPower(0.7); // for when not testing PID
@@ -68,23 +70,31 @@ public class BasicTeleOp extends LinearOpMode {
                 robot.flywheel.setPower(0);
             }
 
+            if (driver.left_bumper){
+                robot.flywheel.setVelocity(-(FlywheelTargetVel/240 * 28));
+            }
+
+
             // INTAKE
             if (driver.right_trigger > 0.1) {
-                robot.intake.setPower(0.8);
+                robot.intake.setPower(1);
             } else if (driver.right_bumper) {
-                robot.intake.setPower(-0.8);
+                robot.intake.setPower(-1);
             } else robot.intake.setPower(0 + Settings.secretIntake); // secret stuff just gives me the ability to drive the robot from my computer
 
             // LIFT SERVO
             if (driver.b) {
                 liftServoTimer.reset();
+                robot.intake.setPower(0);
                 justStarted = false; // waits until you hit the button first before it resets the timer, just cause the timer gets restarted with the robot being enabled
             }
             if (liftServoTimer.time() < 0.8 && !justStarted) {
                 robot.lift.setPower(-0.25);
+                robot.intake.setPower(0);
                 // robot.lift.setPosition(Settings.ServoTopPosition);
             } else if (liftServoTimer.time() < 1.8 && !justStarted) {
                 robot.lift.setPower(0.25);
+                robot.lift.setPower(0);
                 // robot.lift.setPosition(Settings.ServoBottomPosition);
             } else robot.lift.setPower(0);
 
@@ -105,6 +115,7 @@ public class BasicTeleOp extends LinearOpMode {
             telemetry.addData("Flywheel Speed (rpm)", flywheelVelocity);
             telemetry.addData("Flywheel encoder", robot.flywheel.getCurrentPosition());
             telemetry.addData("Flywheel power", flywheelPower);
+            telemetry.addData("Flywheel Angle: ", robot.angle.getPosition());
 
 
             // Telemetry
