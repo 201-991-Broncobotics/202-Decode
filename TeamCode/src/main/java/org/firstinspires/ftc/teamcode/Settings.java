@@ -6,7 +6,7 @@ import com.acmerobotics.dashboard.config.Config;
 public class Settings {
 
     public static double flywheelVel = 37500; // max target Flywheel RPM
-    public static double flywheelVelBumper = 1000; // max target Flywheel RPM
+    public static double flywheelVelBumper = 18500; // target Flywheel RPM for close
     public static boolean justTurnFlywheelOn = true;
     public static double secretForward = 0;
     public static double secretTurn = 0;

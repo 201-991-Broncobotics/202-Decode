@@ -25,7 +25,7 @@ public class BasicTeleOp extends LinearOpMode {
         boolean justStarted = true;
         double FlywheelTargetVel = 0;
         double flywheelPower = 0;
-        boolean FlywheelOn = false, FlywheelJustToggled = false;
+        boolean flywheelPowerToggle = false, xPressedLast = false;
         double IntakePower = 0;
         boolean IntakeOn = false, IntakeJustToggled = false;
 
@@ -57,31 +57,31 @@ public class BasicTeleOp extends LinearOpMode {
             // TURRET
             robot.turret.setPower((driver.dpad_left ? 0.6 : 0.0) + (driver.dpad_right ? -0.6 : 0.0));
 
+            //ANGLE LOCk
+            robot.angle.setPosition(Settings.servoAngle);
+
             // FLYWHEEL
-            if (driver.left_trigger > 0.1) {
-                FlywheelTargetVel = driver.left_trigger * Settings.flywheelVel;
-            } else if (driver.left_bumper) {
-                FlywheelTargetVel = Settings.flywheelVelBumper;
-            }
+            if (driver.left_trigger > 0.25) {
 
-            if (FlywheelOn) {
-
-                robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0)); // F is just a constant, like for gravity which isn't needed here
-                robot.flywheel.setVelocity(FlywheelTargetVel/60.0 * 28); // in encoder tick per second
-                // robot.flywheel.setPower(0.7); // in case the velocity thing doesn't work
-
-                //Set flap angle
-                robot.angle.setPosition(Settings.servoAngle);
-
-            } else robot.flywheel.setPower(0);
-
-            if (driver.left_trigger > 0.1 || driver.left_bumper) {
-                if (!FlywheelJustToggled) {
-                    FlywheelOn = !FlywheelOn;
-                    FlywheelJustToggled = true;
+                // Flywheel power
+                if (!flywheelPowerToggle) {
+                    robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0));
+                    robot.flywheel.setVelocity(Settings.flywheelVel / 60.0 * 28);
+                } else {
+                    robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0));
+                    robot.flywheel.setVelocity(Settings.flywheelVelBumper / 60.0 * 28);
                 }
-            } else FlywheelJustToggled = false;
+                if (driver.x && !xPressedLast) {
+                    flywheelPowerToggle = !flywheelPowerToggle;   // <-- toggles only once
+                }
+                xPressedLast = driver.x;
+            } else robot.flywheel.setVelocity(0);
 
+            if (driver.left_bumper) {
+                robot.flywheel.setPIDFCoefficients(DcMotorEx.RunMode.RUN_USING_ENCODER, new PIDFCoefficients(Settings.FlywheelKP, Settings.FlywheelKI, Settings.FlywheelKD, 0));
+                robot.flywheel.setVelocity(-Settings.flywheelVel/240.0 * 28);
+
+            }
 
             // INTAKE
             if (driver.right_trigger > 0.1) {
