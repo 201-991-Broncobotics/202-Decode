@@ -14,6 +14,8 @@ public class MeepMeepTesting {
                 .setConstraints(60, 60, Math.toRadians(180), Math.toRadians(180), 15)
                 .build();
 
+
+        // Basic auto: shoot 3 into depot; collect 3 from ground; shoot 3 into depot
         myBot.runAction(myBot.getDrive().actionBuilder(new Pose2d(62, 12, (Math.toRadians(180))))
                 .lineToX(55)
                 .turn(Math.toRadians(-20))
