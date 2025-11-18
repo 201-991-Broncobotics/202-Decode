@@ -59,9 +59,12 @@ public class BasicTeleOp extends LinearOpMode {
 
             // FLYWHEEL
             if (driver.left_trigger > 0.1) {
-                FlywheelTargetVel = driver.left_trigger * Settings.flywheelVel;
+                FlywheelTargetVel = Settings.flywheelVel;
+                robot.angle.setPosition(Settings.servoAngle);
+
             } else if (driver.left_bumper) {
-                FlywheelTargetVel = Settings.flywheelVelBumper;
+                FlywheelTargetVel = Settings.flywheelVel2;
+                robot.angle.setPosition(Settings.servoAngle2);
             }
 
             if (FlywheelOn) {
