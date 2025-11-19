@@ -34,9 +34,9 @@ public class BasicAuton extends LinearOpMode {
                 .lineToX(35)
                 .turn(Math.toRadians(-90))
                 .lineToY(60)
-                .lineToY(0)
+                .lineToY(12)
                 .turn(Math.toRadians(90))
-                .lineToX(0)
+                .lineToX(-12)
                 .turn(Math.toRadians(-45))
                 .build();
 
