@@ -1,7 +1,10 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
+import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.Gamepad;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
@@ -11,11 +14,9 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="TeleOp", group="Iterative Opmode")
 public class BasicTeleOp extends LinearOpMode {
 
-    public void runOpMode() throws InterruptedException {
+    public void runOpMode() {
         RobotHardware robot = new RobotHardware(hardwareMap, telemetry);
-
         Gamepad driver = gamepad1, operator = gamepad2; // initialize controllers
-
         ElapsedTime mRuntime = new ElapsedTime(ElapsedTime.Resolution.SECONDS);
 
         // You can create any variables you need here
@@ -29,8 +30,6 @@ public class BasicTeleOp extends LinearOpMode {
         double IntakePower = 0;
         boolean IntakeOn = false, IntakeJustToggled = false;
 
-
-
         waitForStart();
 
         while (opModeIsActive() && !isStopRequested()) {
@@ -39,8 +38,6 @@ public class BasicTeleOp extends LinearOpMode {
             // Call the Mecanum drive method from RobotHardware to drive the robot
             // If you want to use absolute driving, you might want to make use of Roadrunner's localizer (check BasicAuton)
             robot.driveWithControllers(driver.left_stick_y + Settings.secretForward, -0.7 * driver.left_stick_x + Settings.secretTurn, 1); // 1 - 0.6 * driver.left_trigger
-
-
 
             // OTHER MOTORS / MECHANISMS
 
@@ -54,8 +51,48 @@ public class BasicTeleOp extends LinearOpMode {
             // This is all you would need to do to use RUN_TO_POSITION:
             // robot.Arm.setTargetPosition(0);
 
-            // TURRET
-            robot.turret.setPower((driver.dpad_left ? 0.6 : 0.0) + (driver.dpad_right ? -0.6 : 0.0));
+            // ---------- Turret Control ----------
+            boolean manualTurretActive = driver.right_trigger > 0.1 || driver.left_trigger > 0.1;
+
+            if (manualTurretActive) {
+                // Turret
+                robot.turret.setPower((driver.dpad_left ? 0.6 : 0.0) + (driver.dpad_right ? -0.6 : 0.0));
+            } else {
+                LLResult llResult = robot.limelight.getLatestResult();
+                if (llResult != null && llResult.isValid()) {
+                    double tx = llResult.getTx(); // horizontal offset
+
+                    // COMMENT THIS OUT WHEN TUNING IS DONE
+                    robot.turretPID.setPIDF(
+                            Settings.turret_P,
+                            Settings.turret_I,
+                            Settings.turret_D,
+                            0.0
+                    );
+
+                    // Use PID to minimize tx
+                    double power = robot.turretPID.calculate(tx);
+                    telemetry.addData("PID power:", power);
+                    // Clamp power to [-1, 1]
+                    power = power > 0 ? Math.min(1, power) : Math.max(-1, power);
+                    robot.turret.setPower(power);
+
+                    // ELI'S ORIGINAL:
+                    // double deadzone = 1.0;
+                    // double power = 0.2;
+                    // if (tx > deadzone) robot.turret.setPower(power);
+                    // else if (tx < -deadzone) robot.turret.setPower(-power);
+                    // else robot.turret.setPower(0);
+
+                    telemetry.addData("AutoTrack Tx", tx);
+                } else {
+                    robot.turret.setPower(0);
+                    telemetry.addLine("No valid Limelight target");
+                }
+            }
+            //  else {
+            //      robot.turret.setPower(0); // stop if no manual or auto-track
+            //  }
 
             //ANGLE LOCk
             robot.angle.setPosition(Settings.servoAngle);

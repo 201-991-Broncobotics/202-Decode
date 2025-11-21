@@ -1,6 +1,7 @@
 package org.firstinspires.ftc.teamcode;
 
 import com.acmerobotics.dashboard.config.Config;
+import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 
 @Config // makes all of these variables show up on the ftc dashboard and lets you edit them while the robot is on without changing code
 public class Settings {
@@ -15,4 +16,7 @@ public class Settings {
     //Ki Should remain 0, KP should be like 0.5-2 ish, KD sshould be like 0.0001 or something like that
     public static double servoAngle = 0.39;
 
+    public static double turret_P = 0.3;
+    public static double turret_I = 0.0;
+    public static double turret_D = 0.0002;
 }

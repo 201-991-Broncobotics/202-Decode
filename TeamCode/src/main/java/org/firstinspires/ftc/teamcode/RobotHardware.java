@@ -6,6 +6,7 @@ import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
 import com.qualcomm.robotcore.hardware.Servo;
+import com.qualcomm.hardware.limelightvision.Limelight3A;
 
 import org.firstinspires.ftc.robotcore.external.Telemetry;
 
@@ -17,6 +18,14 @@ public class RobotHardware {
     public final HardwareMap map;
     public final Telemetry telemetry;
 
+    public final Limelight3A limelight;
+
+    public final PIDFController turretPID = new PIDFController(
+            Settings.turret_P,
+            Settings.turret_I,
+            Settings.turret_D,
+            0.0
+    );
 
     public final DcMotor RT, RB, LT, LB, diffy, turret, intake;
     public final DcMotorEx flywheel;
@@ -46,6 +55,7 @@ public class RobotHardware {
         intake = hardwareMap.get(DcMotor.class, "intake");
         lift = hardwareMap.get(CRServo.class, "lift");
         angle = hardwareMap.get(Servo.class, "angle");
+        limelight = hardwareMap.get(Limelight3A.class, "limelight");
 
 
         // This offers a description of what some of the run modes and zeroPowerBehavior do if you click on some of the methods
@@ -91,6 +101,9 @@ public class RobotHardware {
 
         angle.scaleRange(0, 1);
 
+        // Limelight init
+        limelight.pipelineSwitch(0);
+        limelight.start();
 
         // You don't need to use this specific PID as the DcMotor and DcMotorEx have their own form of
         // a PID which you can use by setting the runMode to RUN_TO_POSITION
