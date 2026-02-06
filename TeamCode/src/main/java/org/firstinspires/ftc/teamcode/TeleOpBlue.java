@@ -1,18 +1,26 @@
 package org.firstinspires.ftc.teamcode;
 
+import com.acmerobotics.roadrunner.Pose2d;
+import com.acmerobotics.roadrunner.ftc.LazyImu;
 import com.qualcomm.hardware.limelightvision.LLResult;
+import com.qualcomm.hardware.limelightvision.LLResultTypes;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 import com.qualcomm.robotcore.eventloop.opmode.LinearOpMode;
 import com.qualcomm.robotcore.eventloop.opmode.TeleOp;
 import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
+import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.Gamepad;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.PIDFCoefficients;
 import com.qualcomm.robotcore.util.ElapsedTime;
+import com.qualcomm.robotcore.wifi.DriverStationAccessPointAssistant;
+
+import org.firstinspires.ftc.robotcore.external.navigation.YawPitchRollAngles;
 
 
-@TeleOp(name="TeleOp", group="Iterative Opmode")
-public class BasicTeleOp extends LinearOpMode {
+@TeleOp(name="TeleOpBlue", group="Iterative Opmode")
+public class TeleOpBlue extends LinearOpMode {
 
     public void runOpMode() {
         RobotHardware robot = new RobotHardware(hardwareMap, telemetry);
@@ -20,6 +28,7 @@ public class BasicTeleOp extends LinearOpMode {
         ElapsedTime mRuntime = new ElapsedTime(ElapsedTime.Resolution.SECONDS);
 
         // You can create any variables you need here
+
         double FrameTime = 0;
         double flywheelVelocity = 0;
         ElapsedTime liftServoTimer = new ElapsedTime(ElapsedTime.Resolution.SECONDS);
@@ -31,6 +40,14 @@ public class BasicTeleOp extends LinearOpMode {
         boolean IntakeOn = false, IntakeJustToggled = false;
 
         waitForStart();
+
+        // BLUE ALLIANCE - Pipeline 1
+        robot.limelight.pipelineSwitch(1);
+        telemetry.addData("Pipeline", "Blue (1)");
+        telemetry.update();
+
+
+        robot.diffy.setDirection(DcMotorSimple.Direction.REVERSE);
 
         while (opModeIsActive() && !isStopRequested()) {
 
@@ -57,10 +74,11 @@ public class BasicTeleOp extends LinearOpMode {
             if (manualTurretActive) {
                 // Turret
                 robot.turret.setPower((driver.dpad_left ? 0.6 : 0.0) + (driver.dpad_right ? -0.6 : 0.0));
-            } else {
+            } else{
                 LLResult llResult = robot.limelight.getLatestResult();
                 if (llResult != null && llResult.isValid()) {
                     double tx = llResult.getTx(); // horizontal offset
+                    tx += Settings.limelight_angular_offset; // limelight mount angular offset
 
                     // COMMENT THIS OUT WHEN TUNING IS DONE
                     robot.turretPID.setPIDF(

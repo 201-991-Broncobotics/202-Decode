@@ -5,6 +5,7 @@ import com.qualcomm.robotcore.hardware.DcMotor;
 import com.qualcomm.robotcore.hardware.DcMotorEx;
 import com.qualcomm.robotcore.hardware.DcMotorSimple;
 import com.qualcomm.robotcore.hardware.HardwareMap;
+import com.qualcomm.robotcore.hardware.IMU;
 import com.qualcomm.robotcore.hardware.Servo;
 import com.qualcomm.hardware.limelightvision.Limelight3A;
 
@@ -20,6 +21,7 @@ public class RobotHardware {
 
     public final Limelight3A limelight;
 
+
     public final PIDFController turretPID = new PIDFController(
             Settings.turret_P,
             Settings.turret_I,
@@ -34,7 +36,6 @@ public class RobotHardware {
     DcMotor is the basic motor class for using a motor though there is also DcMotorEx which allows
     for running a motor at a specific speed
      */
-
 
     public final CRServo lift; // If you need to use a servo similar to a motor, use CRServo
     public final Servo angle;
@@ -66,7 +67,7 @@ public class RobotHardware {
         LT.setDirection(DcMotor.Direction.FORWARD);
         LB.setDirection(DcMotor.Direction.FORWARD);
         RT.setDirection(DcMotor.Direction.FORWARD);
-        RB.setDirection(DcMotor.Direction.FORWARD);
+        RB.setDirection(DcMotor.Direction.REVERSE);
         diffy.setDirection(DcMotor.Direction.FORWARD);
         turret.setDirection(DcMotor.Direction.FORWARD);
         intake.setDirection(DcMotor.Direction.FORWARD);
