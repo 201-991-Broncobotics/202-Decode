@@ -12,7 +12,7 @@ import com.qualcomm.robotcore.util.ElapsedTime;
 @TeleOp(name="TeleOpRed", group="Iterative Opmode")
 public class TeleOpRed extends LinearOpMode {
 
-    private static final double TICKS_PER_TURRET_REV = 2151.0;
+    private static final double TICKS_PER_TURRET_REV = 2151.0; // unused now, ok to keep
     private double lastTx = 0;
 
     @Override
@@ -31,16 +31,10 @@ public class TeleOpRed extends LinearOpMode {
         double IntakePower = 0;
         boolean IntakeOn = false, IntakeJustToggled = false;
 
-        double lastTurretPos;
-        double totalRotation = 0;
-        final double WRAP_LIMIT = 180;   // about 1/2 turn
-        boolean unwinding = false;
-
         // TURRET SETUP
         robot.turret.setMode(DcMotor.RunMode.RUN_WITHOUT_ENCODER);
         robot.turret.setZeroPowerBehavior(DcMotor.ZeroPowerBehavior.BRAKE);
         robot.turret.setDirection(DcMotorSimple.Direction.FORWARD);
-        lastTurretPos = robot.turret.getCurrentPosition();
 
         // FLYWHEEL SETUP (flywheel MUST be DcMotorEx in RobotHardware)
         DcMotorEx fly = robot.flywheel;
@@ -64,7 +58,7 @@ public class TeleOpRed extends LinearOpMode {
                     1
             );
 
-            // ---------- TURRET CONTROL ----------
+            // ---------- TURRET CONTROL (NO WIRE WRAP) ----------
             double turretPower = 0;
             boolean manualTurretActive = driver.dpad_left || driver.dpad_right;
 
@@ -121,33 +115,7 @@ public class TeleOpRed extends LinearOpMode {
                 }
             }
 
-            // ---------- WIRE WRAP PROTECTION ----------
-            double currentPos = robot.turret.getCurrentPosition();
-            double delta = currentPos - lastTurretPos;
-            lastTurretPos = currentPos;
-
-            double degreesDelta = (delta / TICKS_PER_TURRET_REV) * 360.0;
-            totalRotation += degreesDelta;
-            telemetry.addData("WireWrap Rotation (deg)", "%.1f", totalRotation);
-
-            if (Math.abs(totalRotation) > WRAP_LIMIT && !unwinding) {
-                unwinding = true;
-            }
-
-            if (unwinding) {
-                double unwindPower = 0.2 * -Math.signum(totalRotation);
-                turretPower = unwindPower;
-
-                telemetry.addData("Unwinding",
-                        "power=%.2f rot=%.1f", unwindPower, totalRotation);
-
-                if (Math.abs(totalRotation) < 30) {
-                    unwinding = false;
-                    totalRotation = 0;
-                }
-            }
-
-            // Apply turret power
+            // Apply turret power directly (no wrap limiting)
             robot.turret.setPower(turretPower);
 
             // ---------- ANGLE LOCK ----------

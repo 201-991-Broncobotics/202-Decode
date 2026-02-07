@@ -45,8 +45,17 @@ public class Red_Auton extends LinearOpMode {
 
         int shotsFired = 0;
         double lastShotTime = -5;
-        double spinupTime = 1.5;   // wait before first shot
-        double betweenShots = 0.7; // gap between shots
+        double spinupTime = 1.5;     // wait before first shot
+        double betweenShots = 1.2;   // MORE gap between completed shots
+
+        // Lift timing (per shot)
+        double liftDownTime = 0.4;   // how long to move lift down
+        double liftUpTime = 0.4;     // how long to move lift up
+        double preShotPause = 0.3;   // EXTRA pause after lift before intake fires
+
+        // 0 = idle, 1 = lift down, 2 = lift up, 3 = wait before fire
+        int liftPhase = 0;
+        double liftPhaseStartTime = -10;
 
         while (opModeIsActive() && !isStopRequested() && shotsFired < 3) {
             double t = clock.time();
@@ -67,7 +76,7 @@ public class Red_Auton extends LinearOpMode {
                 if (Math.abs(error) < deadband) {
                     turretPower = 0;
                 } else {
-                    double cmd = +k * error;  // use same sign that works in TeleOp
+                    double cmd = +k * error;
 
                     if (error > 0) {
                         cmd -= minCommand;
@@ -92,20 +101,68 @@ public class Red_Auton extends LinearOpMode {
             robot.turret.setPower(turretPower);
             robot.angle.setPosition(Settings.servoAngle);
 
-            // --- Shooting logic ---
-            boolean readyToShoot = t > spinupTime && (t - lastShotTime) > betweenShots;
+            // --- Decide if we should start a new shot cycle ---
+            boolean canStartNewShot =
+                    (t > spinupTime) &&
+                            (t - lastShotTime > betweenShots) &&
+                            (shotsFired < 3) &&
+                            (liftPhase == 0);   // only start if lift is idle
 
-            if (readyToShoot && shotsFired < 3) {
-                robot.intake.setPower(-1);
-                sleep(250);         // pulse length for one pixel
-                robot.intake.setPower(0);
+            if (canStartNewShot) {
+                liftPhase = 1;              // start lift-down phase
+                liftPhaseStartTime = t;
+            }
 
-                shotsFired++;
-                lastShotTime = clock.time();
+            // --- Lift + shooting state machine ---
+            double phaseTime = t - liftPhaseStartTime;
+
+            switch (liftPhase) {
+                case 0:
+                    // idle: keep lift stopped
+                    robot.lift.setPower(0);
+                    break;
+
+                case 1:
+                    // lift down
+                    if (phaseTime < liftDownTime) {
+                        robot.lift.setPower(-0.25);
+                    } else {
+                        robot.lift.setPower(0);
+                        liftPhase = 2;
+                        liftPhaseStartTime = t;
+                    }
+                    break;
+
+                case 2:
+                    // lift up
+                    if (phaseTime < liftUpTime) {
+                        robot.lift.setPower(0.25);
+                    } else {
+                        robot.lift.setPower(0);
+                        liftPhase = 3;           // go into pre-shot pause
+                        liftPhaseStartTime = t;
+                    }
+                    break;
+
+                case 3:
+                    // pause before firing (extra time gap between lift and shot)
+                    robot.lift.setPower(0);
+                    if (phaseTime >= preShotPause) {
+                        // FIRE ONE PIXEL
+                        robot.intake.setPower(-1);
+                        sleep(250);
+                        robot.intake.setPower(0);
+
+                        shotsFired++;
+                        lastShotTime = clock.time();
+                        liftPhase = 0;          // back to idle
+                    }
+                    break;
             }
 
             telemetry.addData("Time", "%.2f", t);
             telemetry.addData("Shots", shotsFired);
+            telemetry.addData("LiftPhase", liftPhase);
             telemetry.update();
 
             idle();
